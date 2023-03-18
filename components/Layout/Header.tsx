@@ -5,8 +5,6 @@ import headerBGIMG from './header-bg.jpg';
 
 import { SearchComponent } from '../SearchComponent';
 
-console.log('headerBGIMG :>> ', headerBGIMG);
-
 export const Header = () => {
   return (
     <Container className="bg-dark text-light" fluid>

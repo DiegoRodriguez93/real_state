@@ -1,0 +1,7 @@
+.onHover {
+  cursor: pointer;
+}
+
+.onHover:hover {
+  opacity: 0.7;
+}

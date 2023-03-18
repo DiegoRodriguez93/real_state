@@ -1,25 +1,20 @@
-import Image from 'next/image';
-import React, { useEffect, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { DraggableThumbnail } from './DraggableThumbnail';
 
-const thumbInner = {
-  display: 'flex',
-  minWidth: 0,
-  overflow: 'hidden',
+import classes from './FilesDropzone.module.css';
+
+type FilesDropzoneProps = {
+  multiple?: boolean;
 };
 
-const img = {
-  display: 'block',
-  width: 'auto',
-  height: '100%',
-};
-
-const FilesDropzone = () => {
+const Uploader: FC<FilesDropzoneProps> = ({ multiple }) => {
   const [files, setFiles] = useState([]);
   const { getRootProps, getInputProps } = useDropzone({
     accept: {
       'image/*': [],
     },
+    multiple: multiple,
     onDrop: (acceptedFiles: any) => {
       setFiles(
         acceptedFiles.map((file: File) =>
@@ -31,36 +26,19 @@ const FilesDropzone = () => {
     },
   });
 
-  const thumbs = files.map((file: any) => (
-    <div
-      style={{
-        display: 'inline-flex',
-        borderRadius: 2,
-        border: '1px solid #eaeaea',
-        marginBottom: 8,
-        marginRight: 8,
-        width: 100,
-        height: 100,
-        padding: 4,
-        boxSizing: 'border-box',
-      }}
-      key={file.name}
-    >
-      <div style={thumbInner}>
-        <Image
-          src={file.preview}
-          style={img}
-          alt={file.name}
-          width={300}
-          height={300}
-          // Revoke data uri after image is loaded
-          onLoad={() => {
-            URL.revokeObjectURL(file.preview);
-          }}
-        />
-      </div>
-    </div>
-  ));
+  const removeFile = (file: any) => {
+    const newFiles = [...files];
+    newFiles.splice(newFiles.indexOf(file as never), 1);
+    setFiles(newFiles);
+    URL.revokeObjectURL(file.preview);
+  };
+
+  const moveImage = (dragIndex: number, hoverIndex: number) => {
+    const newFiles = [...files];
+    newFiles[hoverIndex] = files[dragIndex];
+    newFiles[dragIndex] = files[hoverIndex];
+    setFiles(newFiles);
+  };
 
   useEffect(() => {
     // Make sure to revoke the data uris to avoid memory leaks, will run on unmount
@@ -72,7 +50,11 @@ const FilesDropzone = () => {
     <section className="container">
       <div {...getRootProps({ className: 'dropzone' })}>
         <input {...getInputProps()} />
-        <p>Drag and drop some files here, or click to select files</p>
+        {multiple ? (
+          <p className={classes.onHover}>Arrastra y suelta algunos archivos aquí, o haz clic para seleccionar archivos</p>
+        ) : (
+          <p className={classes.onHover}>Arrastra y suelta un archivo aquí, o haz clic para seleccionar un archivo</p>
+        )}
       </div>
       <aside
         style={{
@@ -80,12 +62,25 @@ const FilesDropzone = () => {
           flexDirection: 'row',
           flexWrap: 'wrap',
           marginTop: 16,
+          position: 'relative',
         }}
       >
-        {thumbs}
+        {files.map((file: any, index) => (
+          <DraggableThumbnail
+            isFirst={index === 0}
+            isLast={index === files.length - 1}
+            key={file?.path}
+            file={file}
+            index={index}
+            moveImage={moveImage}
+            removeFile={removeFile}
+          />
+        ))}
       </aside>
     </section>
   );
 };
+
+const FilesDropzone: FC<FilesDropzoneProps> = ({ multiple }) => <Uploader multiple={multiple} />;
 
 export default FilesDropzone;

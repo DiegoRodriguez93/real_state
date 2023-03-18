@@ -18,8 +18,7 @@ import dynamic from 'next/dynamic';
 
 const SearchAddress = dynamic(() => import('./SearchAddress'), {
   ssr: false,
-})
-
+});
 
 export const NewProperty = () => {
   const [productName, setProductName] = useState('');
@@ -42,8 +41,6 @@ export const NewProperty = () => {
   useEffect(() => {
     firestore.get('categories');
   }, [showNewCategoryFormModal, firestore]);
-
-  console.log('categories :>> ', categories);
 
   const handleCreateNewProduct = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -92,8 +89,6 @@ export const NewProperty = () => {
     } catch (error) {}
   };
 
-  console.log('values', values);
-
   return (
     <>
       {showNewCategoryFormModal && <NewCategory onHide={() => setShowNewCategoryFormModal(false)} />}
@@ -123,7 +118,7 @@ export const NewProperty = () => {
               </Form.Select>
             </Col>
             <Col sm={3}>
-              <Button onClick={() => setShowNewCategoryFormModal(true)}>New Category</Button>
+              <Button onClick={() => setShowNewCategoryFormModal(true)}>Nueva Categoría</Button>
             </Col>
           </Row>
         </Form.Group>
@@ -167,6 +162,11 @@ export const NewProperty = () => {
         </Row>
 
         <Form.Group className="mb-3">
+          <Form.Label>Subir imagenes del producto:</Form.Label>
+          <FilesDropzone multiple />
+        </Form.Group>
+
+        <Form.Group className="mb-3">
           <Form.Label>Dirección:</Form.Label>
           <SearchAddress />
         </Form.Group>
@@ -176,7 +176,7 @@ export const NewProperty = () => {
           <TextAreaWithHTML name="description" values={values} setValues={setValues} />
         </Form.Group>
 
-        <Form.Group className="mb-3">
+        {/*         <Form.Group className="mb-3">
           <Form.Label>Upload Product image:</Form.Label>
           <Form.Control
             type="file"
@@ -190,12 +190,14 @@ export const NewProperty = () => {
             name="product_file"
             id="product_file"
           />
-        </Form.Group>
+        </Form.Group> */}
 
         <Form.Group className="mb-3">
-          <Form.Label>Upload Product image:</Form.Label>
+          <Form.Label>Subir imagen principal del producto:</Form.Label>
           <FilesDropzone />
         </Form.Group>
+
+
 
         <Button className="w-100 mt-4" type="submit">
           Create
