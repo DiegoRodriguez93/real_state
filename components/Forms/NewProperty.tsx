@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useState, useRef } from 'react';
 import { Button, Col, Form, InputGroup, Row } from 'react-bootstrap';
 import { useFirestore, useFirestoreConnect } from 'react-redux-firebase';
 import { getDocs } from 'firebase/firestore';
@@ -15,6 +15,11 @@ import { NewCategory } from './NewCategory';
 // import { SearchAddress } from './SearchAddress';
 
 import dynamic from 'next/dynamic';
+import { NewGenericItem } from './NewGenericItem';
+
+const width = {
+  width: '100%',
+};
 
 const SearchAddress = dynamic(() => import('./SearchAddress'), {
   ssr: false,
@@ -22,86 +27,215 @@ const SearchAddress = dynamic(() => import('./SearchAddress'), {
 
 export const NewProperty = () => {
   const [productName, setProductName] = useState('');
-  const [values, setValues] = useState<Record<string, string>>({});
+  const [values, setValues] = useState<Record<string, any>>({});
   const [categoryId, setCategoryId] = useState('');
-  const [file, setFile] = useState<File | undefined>();
-  const [error, setError] = useState('');
+  // const [file, setFile] = useState<File | undefined>();
+  const [errors, setErrors] = useState<Record<string, any>>({});
   const [showNewCategoryFormModal, setShowNewCategoryFormModal] = useState(false);
+  const [showNewTagFormModal, setShowNewTagFormModal] = useState(false);
+  const [showNewCurrencyFormModal, setShowNewCurrencyFormModal] = useState(false);
+
+  const formRef: any = useRef(null);
 
   const handleChangeInput = (e: ChangeEvent<any>) => {
-    setValues({ ...values, [e.target.name]: e.target.value });
+    try {
+      if (errors.hasOwnProperty(e.target.name) && e.target.value.length > 0) {
+        const newErrors = { ...errors };
+        delete newErrors?.[e.target.name];
+        setErrors(newErrors);
+      }
+      setValues({ ...values, [e.target.name]: e.target.value });
+    } catch (error) {
+      console.error(`Error setting value or cleaning error: ${error}`);
+    }
   };
 
   const firestore = useFirestore();
-  useFirestoreConnect('categories');
-  const categories = useSelector<RootState, Array<{ id: string; name: string; color: string }>>(
-    (state) => state?.firestore?.ordered?.categories,
-  );
+  useFirestoreConnect([
+    {
+      collection: 'currencies',
+    },
+    {
+      collection: 'tags',
+    },
+    {
+      collection: 'categories',
+    },
+  ]);
+
+  const state = useSelector<RootState, Record<string, Array<{ id: string; name: string }>>>((state) => ({
+    categories: state?.firestore?.ordered?.categories,
+    tags: state?.firestore?.ordered?.tags,
+    currencies: state?.firestore?.ordered?.currencies,
+  }));
+
+  const { categories, tags, currencies } = state;
 
   useEffect(() => {
     firestore.get('categories');
   }, [showNewCategoryFormModal, firestore]);
 
-  const handleCreateNewProduct = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!productName) {
-      Swal.fire('Error!', 'Product name is required', 'error');
-      return;
+  const uploadHouseImages = async (files: Array<File>, propertyName: string) => {
+    const urls: Array<string> = [];
+
+    // don't migrate to Promise.All since I want them to be in the same order
+    for await (const file of files) {
+      const fileName = `images/${propertyName?.replace(' ', '_')}${file?.name?.slice(-5)}`;
+      const reqFile = await uploadBytes(ref(storage, fileName), file);
+      const url = await getDownloadURL(reqFile?.ref);
+      urls.push(url);
     }
 
-    if (!categoryId) {
-      Swal.fire('Error!', 'Category is required', 'error');
-      return;
-    }
+    return urls;
+  };
+
+  const handleCreateNewProduct = async (e: FormEvent<HTMLFormElement>) => {
     try {
-      const productsReq = await getDocs(firestore.collection('products'));
+      console.log('values :>> ', values);
+      const propertyName = values?.estate_name;
+      let profileImage = 'https://i.imgur.com/cGoZGmO.jpg';
+
+      if (values?.profile_image?.[0]) {
+        const file = values?.profile_image?.[0];
+        const fileName = `images/${propertyName?.replace(' ', '_')}${file?.name?.slice(-5)}`;
+        const reqFile = await uploadBytes(ref(storage, fileName), file);
+        const url = await getDownloadURL(reqFile?.ref);
+        profileImage = url;
+      }
+
+      const estates_images = await uploadHouseImages(values?.estates_images, propertyName);
+
+      const firestorePromise = firestore.add('estates', {
+        estate_name: propertyName,
+        category: values?.category ?? '',
+        currency: values?.currency ?? '',
+        tag: values?.tag ?? '',
+        price: values?.price ?? '',
+        operation_type: values?.operation_type ?? 'sale',
+        floors: values?.floors ?? '',
+        total_area: values?.total_area ?? '',
+        total_built_area: values?.total_built_area ?? '',
+        address: values?.address ?? '',
+        department: values?.department ?? '',
+        description: values?.description ?? '',
+        youtube_video: values?.youtube_video ?? '',
+        profile_image: profileImage,
+        estates_images,
+      });
+
+      toast.promise(firestorePromise, {
+        pending: 'Creando nueva propiedad...',
+        success: 'La propiedad ha sido creado exitosamente 👌',
+        error: 'Ocurrió un error al crear la propiedad, por favor inténtalo de nuevo más tarde 🤯',
+      });
+
+      return;
+
+      /*       const productsReq = await getDocs(firestore.collection('products'));
       const products = productsReq?.docs.map((doc) => doc.data());
       const hasThisCategory = products?.find((product) => productName.toLowerCase() === product?.name.toLowerCase());
 
       if (hasThisCategory) {
         Swal.fire('Error!', 'Product already exists', 'error');
         return;
-      }
+      } */
 
-      const fileName = `images/${productName?.replace(' ', '_')}${file?.name?.slice(-5)}`;
+      /*       const fileName = `images/${productName?.replace(' ', '_')}${file?.name?.slice(-5)}`;
 
       const reqFile = await uploadBytes(ref(storage, fileName), file as Blob);
 
       const url = await getDownloadURL(reqFile?.ref);
-
-      const firestorePromise = firestore.add('products', {
+ */
+      /*       const firestorePromise = firestore.add('products', {
         name: productName,
         categoryId,
         file: url,
-      });
+      }); 
 
       toast.promise(firestorePromise, {
-        pending: 'Creating new product...',
-        success: 'The product has been created successfully 👌',
-        error: 'An error occurred when creating the product , please try again later🤯',
+        pending: 'Creando nueva propiedad...',
+        success: 'La propiedad ha sido creado exitosamente 👌',
+        error: 'Ocurrió un error al crear la propiedad, por favor inténtalo de nuevo más tarde 🤯',
       });
 
       const target = e?.target as HTMLFormElement;
       target.reset();
       setProductName('');
-      setCategoryId('');
-      setFile(undefined);
-    } catch (error) {}
+      setCategoryId('');*/
+      // setFile(undefined);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const focusFirstInvalidField = () => {
+    if (formRef.current) {
+      const firstInvalidField = formRef.current?.querySelector('.is-invalid');
+      if (firstInvalidField) {
+        firstInvalidField.focus();
+      }
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors: Record<string, any> = {};
+
+    if (!values.estate_name) {
+      newErrors.estate_name = 'El título de la propiedad es obligatorio.';
+    }
+
+    setErrors(newErrors);
+
+    const isValid = Object.keys(newErrors).length === 0;
+    if (!isValid) {
+      setTimeout(() => {
+        focusFirstInvalidField();
+      }, 220);
+    }
+    return isValid;
   };
 
   return (
     <>
-      {showNewCategoryFormModal && <NewCategory onHide={() => setShowNewCategoryFormModal(false)} />}
-      <Form onSubmit={handleCreateNewProduct}>
+      {showNewCategoryFormModal && (
+        <NewGenericItem
+          itemCollectionName="categories"
+          itemNameLabel="Categoría"
+          onHide={() => setShowNewCategoryFormModal(false)}
+        />
+      )}
+      {showNewTagFormModal && (
+        <NewGenericItem itemCollectionName="tags" itemNameLabel="Etiqueta" onHide={() => setShowNewTagFormModal(false)} />
+      )}
+      {showNewCurrencyFormModal && (
+        <NewGenericItem
+          itemCollectionName="currencies"
+          itemNameLabel="Moneda"
+          onHide={() => setShowNewCurrencyFormModal(false)}
+        />
+      )}
+      <Form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (validateForm()) {
+            handleCreateNewProduct(e);
+          }
+        }}
+        ref={formRef}
+      >
         <Form.Group className="mb-3">
-          <Form.Label>Título de la propiedad</Form.Label>
+          <Form.Label>
+            Título de la propiedad <span>*</span>
+          </Form.Label>
           <Form.Control
             type="text"
             id="estate_name"
             name="estate_name"
             placeholder="Ej: Casa moderna y luminosa en zona de Palermo..."
             onChange={handleChangeInput}
+            className={errors.estate_name ? 'is-invalid' : ''}
           />
+          {errors.estate_name && <Form.Text className="text-danger">{errors.estate_name}</Form.Text>}
         </Form.Group>
 
         <Form.Group className="mb-3">
@@ -118,7 +252,78 @@ export const NewProperty = () => {
               </Form.Select>
             </Col>
             <Col sm={3}>
-              <Button onClick={() => setShowNewCategoryFormModal(true)}>Nueva Categoría</Button>
+              <Button style={width} type="button" onClick={() => setShowNewCategoryFormModal(true)}>
+                Nueva Categoría
+              </Button>
+            </Col>
+          </Row>
+        </Form.Group>
+
+        <Form.Group className="mb-3">
+          <Form.Label>Seleccione una Etiqueta:</Form.Label>
+          <Row>
+            <Col sm={9}>
+              <Form.Select onChange={handleChangeInput} name="tag" id="tag">
+                <option>- Select -</option>
+                {tags?.map((tag) => (
+                  <option key={tag?.id} value={tag?.id}>
+                    {tag?.name}
+                  </option>
+                ))}
+              </Form.Select>
+            </Col>
+            <Col sm={3}>
+              <Button style={width} type="button" onClick={() => setShowNewTagFormModal(true)}>
+                Nueva Etiqueta
+              </Button>
+            </Col>
+          </Row>
+        </Form.Group>
+
+        <Form.Group className="mb-3">
+          <Row>
+            <Col sm={6}>
+              <Form.Label>
+                Precio <span>*</span>
+              </Form.Label>
+              <InputGroup className="mb-3">
+                <Form.Control type="number" name="price" id="price" onChange={handleChangeInput} />
+                <InputGroup.Text>USD</InputGroup.Text>
+              </InputGroup>
+            </Col>
+            <Col sm={3}>
+              <Form.Label>Seleccione una moneda:</Form.Label>
+              <Form.Select onChange={handleChangeInput} name="currency" id="currency">
+                <option>- Select -</option>
+                {currencies?.map((currency) => (
+                  <option key={currency?.id} value={currency?.id}>
+                    {currency?.name}
+                  </option>
+                ))}
+              </Form.Select>
+            </Col>
+            <Col style={{ display: 'flex!important', alignItems: 'center!important', paddingTop: '15px!important' }} sm={3}>
+              <Button style={width} type="button" onClick={() => setShowNewCurrencyFormModal(true)}>
+                Nueva Moneda
+              </Button>
+            </Col>
+          </Row>
+        </Form.Group>
+
+        <Form.Group className="mb-3">
+          <Row>
+            <Col sm={9}>
+              <Form.Label>Tipo de operación:</Form.Label>
+              <Form.Select onChange={handleChangeInput} name="operation_type" id="operation_type">
+                <option value="sale"> Venta</option>
+                <option value="rent">Alquiler</option>
+              </Form.Select>
+            </Col>
+            <Col sm={3}>
+              <Form.Label>Pisos:</Form.Label>
+              <InputGroup className="mb-3">
+                <Form.Control type="number" name="floors" id="floors" onChange={handleChangeInput} />
+              </InputGroup>
             </Col>
           </Row>
         </Form.Group>
@@ -163,12 +368,12 @@ export const NewProperty = () => {
 
         <Form.Group className="mb-3">
           <Form.Label>Subir imagenes del producto:</Form.Label>
-          <FilesDropzone multiple />
+          <FilesDropzone multiple values={values} setValues={setValues} key_file_array="estates_images" />
         </Form.Group>
 
         <Form.Group className="mb-3">
           <Form.Label>Dirección:</Form.Label>
-          <SearchAddress />
+          <SearchAddress values={values} setValues={setValues} />
         </Form.Group>
 
         <Form.Group className="mb-3">
@@ -194,13 +399,25 @@ export const NewProperty = () => {
 
         <Form.Group className="mb-3">
           <Form.Label>Subir imagen principal del producto:</Form.Label>
-          <FilesDropzone />
+          <FilesDropzone values={values} setValues={setValues} key_file_array="profile_image" />
         </Form.Group>
 
+        <Form.Group className="mb-3">
+          <Form.Label>Subir enlace de video</Form.Label>
+          <Form.Control
+            type="text"
+            id="youtube_video"
+            name="youtube_video"
+            placeholder="Ej: https://youtu.be/RVF-L3zqhpE"
+            onChange={handleChangeInput}
+            className={errors.youtube_video ? 'is-invalid' : ''}
+          />
+          <small>Solo soporta enlaces de YouTube</small>
+          {errors.youtube_video && <Form.Text className="text-danger">{errors.youtube_video}</Form.Text>}
+        </Form.Group>
 
-
-        <Button className="w-100 mt-4" type="submit">
-          Create
+        <Button className="w-100 mt-4 mb-5" type="submit">
+          Crear
         </Button>
       </Form>
     </>

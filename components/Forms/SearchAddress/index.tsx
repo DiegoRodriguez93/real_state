@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { Dispatch, FC, SetStateAction, useEffect, useRef, useState } from 'react';
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 import { OpenStreetMapProvider } from 'leaflet-geosearch';
 import { debounce } from 'lodash';
@@ -8,6 +8,7 @@ import 'esri-leaflet-geocoder/dist/esri-leaflet-geocoder.css';
 import { ExternalGeocoder } from './ExternalGeocoder';
 
 import L from 'leaflet';
+import { DEPARTAMENTOS_URUGUAY } from '../../../constants/address';
 
 const myIcon = new L.Icon({
   iconUrl: '/images/marker-icon-2x-black.png',
@@ -18,7 +19,12 @@ const myIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
-const SearchAddress = () => {
+type SearchAddressProps = {
+  values: Record<string, any>;
+  setValues: Dispatch<SetStateAction<Record<string, any>>>;
+};
+
+const SearchAddress: FC<SearchAddressProps> = ({ values, setValues }) => {
   const mapRef: any = useRef(null);
   const inputRef: any = useRef(null);
   const provider = new OpenStreetMapProvider();
@@ -40,6 +46,7 @@ const SearchAddress = () => {
       try {
         const results = await provider.search({ query: address });
         if (results && results.length > 0) {
+          console.log('results :>> ', results);
           setResults(results);
         } else {
           setResults([]);
@@ -52,7 +59,7 @@ const SearchAddress = () => {
 
   const handleSearchAddress = debounce((value: string) => {
     searchAddress(value);
-  }, 350);
+  }, 450);
 
   const setAddress = (index: number) => {
     try {
@@ -60,6 +67,13 @@ const SearchAddress = () => {
       const { x, y } = results[index];
       const address: any = [y, x];
       mapRef?.current?.flyTo(address, 16);
+
+      const addressLabel = results[index].label;
+      const regexDepartamento = new RegExp(`(${DEPARTAMENTOS_URUGUAY.join('|')})`, 'i');
+      const nameOfDepartamento = addressLabel.match(regexDepartamento)?.[1];
+
+      setValues({ ...values, address: addressLabel, department: nameOfDepartamento });
+
       setMarketPosition(address);
       setResults([]);
     } catch (error) {
@@ -70,6 +84,10 @@ const SearchAddress = () => {
   useEffect(() => {
     const initializeLeafletGeoCoder = async () => {
       setIsConfigReady(true);
+
+      if (!mapRef.current._leaflet_id) {
+        return;
+      }
 
       const l: any = await import('esri-leaflet-geocoder');
       const control = l.geosearch({

@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react';
+import { Dispatch, FC, SetStateAction, useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { DraggableThumbnail } from './DraggableThumbnail';
 
@@ -6,10 +6,13 @@ import classes from './FilesDropzone.module.css';
 
 type FilesDropzoneProps = {
   multiple?: boolean;
+  values: Record<string, any>;
+  setValues: Dispatch<SetStateAction<Record<string, any>>>;
+  key_file_array: string;
 };
 
-const Uploader: FC<FilesDropzoneProps> = ({ multiple }) => {
-  const [files, setFiles] = useState([]);
+const Uploader: FC<FilesDropzoneProps> = ({ multiple, values, setValues, key_file_array }) => {
+  const [files, setFiles] = useState<Array<File>>([]);
   const { getRootProps, getInputProps } = useDropzone({
     accept: {
       'image/*': [],
@@ -25,6 +28,10 @@ const Uploader: FC<FilesDropzoneProps> = ({ multiple }) => {
       );
     },
   });
+
+  useEffect(() => {
+    setValues({ ...values, [key_file_array]: files });
+  }, [files]);
 
   const removeFile = (file: any) => {
     const newFiles = [...files];
@@ -81,6 +88,4 @@ const Uploader: FC<FilesDropzoneProps> = ({ multiple }) => {
   );
 };
 
-const FilesDropzone: FC<FilesDropzoneProps> = ({ multiple }) => <Uploader multiple={multiple} />;
-
-export default FilesDropzone;
+export default Uploader;

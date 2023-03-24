@@ -40,6 +40,7 @@ const ExternalGeocoderRender: ForwardRefRenderFunction<any, ExternalGeocoderProp
             }}
             placeholder="Buscar dirección..."
           />
+          <small>La dirección exacta no se mostrará en la publicación</small>
         </Form.Group>
         {results.length > 0 && (
           <div
