@@ -13,13 +13,13 @@ export const useSearchCollectionData = () => {
     });
   }
 
-  const productsWithCategories = data.products?.map((product) => {
-    const categoryName = listOfCategoriesNames[product?.categoryId];
+  const estatesWithCategories = data.estates?.map((estate) => {
+    const categoryName = listOfCategoriesNames[estate?.categoryId];
     return {
-      ...product,
+      ...estate,
       categoryName,
     };
   });
 
-  return { productsWithCategories };
+  return { estates: estatesWithCategories };
 };

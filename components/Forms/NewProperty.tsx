@@ -91,7 +91,6 @@ export const NewProperty = () => {
 
   const handleCreateNewProduct = async (e: FormEvent<HTMLFormElement>) => {
     try {
-      console.log('values :>> ', values);
       const propertyName = values?.estate_name;
       let profileImage = 'https://i.imgur.com/cGoZGmO.jpg';
 

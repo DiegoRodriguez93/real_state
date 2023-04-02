@@ -27,9 +27,9 @@ type EstateType = {
   toilets?: string;
   garages?: string;
 };
-type TagsType = { name: string };
-type CurrencyType = { name: string };
-type CategoryType = { name: string };
+type TagsType = { name: string; id: string };
+type CurrencyType = { name: string; id: string };
+type CategoryType = { name: string; id: string };
 
 type SelectorsType = {
   estates: Array<ProductType>;

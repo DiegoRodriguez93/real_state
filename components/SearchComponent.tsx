@@ -4,30 +4,30 @@ import { ListGroup } from 'react-bootstrap';
 
 import { useSearchCollectionData } from '../hooks/useSearchCollectionData';
 
-type ProductsFound = Array<ProductType & { categoryName: string }>;
+type EstatesFound = Array<EstateType & { categoryName: string }>;
 
 export const SearchComponent = () => {
   // TODO: replace with BE firebase search
-  const { productsWithCategories } = useSearchCollectionData();
+  const { estates } = useSearchCollectionData();
 
   const [searchStringValue, setSearchStringValue] = useState('');
-  const [productsFound, setProductsFound] = useState<ProductsFound>([]);
+  const [estatesFound, setEstatesFound] = useState<EstatesFound>([]);
 
   const inputSearchRef = useRef<HTMLInputElement>(null);
   const inputSearchWidth = inputSearchRef.current?.offsetWidth ?? 'auto';
 
   useEffect(() => {
     if (searchStringValue) {
-      const search = productsWithCategories?.filter(
-        ({ name, categoryName }) =>
-          String(`${name} ${categoryName}`).toUpperCase().indexOf(String(searchStringValue).toUpperCase()) > -1,
+      const search = estates?.filter(
+        ({ estate_name, categoryName }) =>
+          String(`${estate_name} ${categoryName}`).toUpperCase().indexOf(String(searchStringValue).toUpperCase()) > -1,
       );
-      setProductsFound(search);
+      setEstatesFound(search);
     } else {
-      setProductsFound([]);
+      setEstatesFound([]);
     }
     // eslint-disable-next-line
-  }, [searchStringValue, productsWithCategories?.length]);
+  }, [searchStringValue, estates?.length]);
 
   const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
     setSearchStringValue(e?.target.value);
@@ -46,15 +46,14 @@ export const SearchComponent = () => {
         id="search"
       />
 
-      {productsFound && productsFound?.length > 0 && (
+      {estatesFound && estatesFound?.length > 0 && (
         <ListGroup style={{ zIndex: 3, textAlign: 'justify', width: inputSearchWidth }} className="position-absolute">
-          {productsFound?.slice(0, 10).map((product) => (
-            <ListGroup.Item key={product?.name}>
-              <Image src={product?.file} alt={product?.name} style={{ width: '28px', height: '28px', marginRight: '10px' }} />
-              {product?.name} - <small className="text-secondary">{product?.categoryName}</small>
+          {estatesFound?.slice(0, 10).map((estates) => (
+            <ListGroup.Item key={estates?.id}>
+              {estates?.estate_name} - <small className="text-secondary">{estates?.categoryName}</small>
             </ListGroup.Item>
           ))}
-          {/* <ListGroup.Item className="bg-info">See all results for "{searchStringValue}"</ListGroup.Item> */}
+          <ListGroup.Item className="bg-info">See all results for {searchStringValue}</ListGroup.Item>
         </ListGroup>
       )}
     </>

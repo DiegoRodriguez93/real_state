@@ -23,8 +23,6 @@ export const EstatesList = () => {
 
   const { categories, tags, estates, currencies } = useEstatesData();
 
-  console.log('estates', estates);
-
   return (
     <Row>
       <Col className="my-5" sm={12}>

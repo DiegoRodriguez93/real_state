@@ -46,7 +46,6 @@ const SearchAddress: FC<SearchAddressProps> = ({ values, setValues }) => {
       try {
         const results = await provider.search({ query: address });
         if (results && results.length > 0) {
-          console.log('results :>> ', results);
           setResults(results);
         } else {
           setResults([]);
