@@ -4,8 +4,36 @@
 declare module '*.png';
 declare module '*.svg';
 
-type ProductType = { name: string; categoryId: string; file: string; id: string };
-type CategoryType = { name: string; id: string, color: string };
-type CurrentUser = { favorites: Array<{ product_id: string; time_added: string }> };
+type EstateType = {
+  id: string;
+  currency?: string;
+  category?: string;
+  department?: string;
+  description?: string;
+  estate_name: string;
+  floors?: string;
+  operation_type: 'rent' | 'sale';
+  price?: string;
+  tag?: string;
+  total_area?: string;
+  total_built_area?: string;
+  youtube_video?: string;
+  address?: string;
+  currency?: string;
+  department?: string;
+  estate_images?: Array<string>;
+  profile_image?: string;
+  bedrooms?: string;
+  toilets?: string;
+  garages?: string;
+};
+type TagsType = { name: string };
+type CurrencyType = { name: string };
+type CategoryType = { name: string };
 
-type SelectorsType = { products: Array<ProductType>; categories: Array<CategoryType>; currentUser: Array<CurrentUser> };
+type SelectorsType = {
+  estates: Array<ProductType>;
+  tags: Array<TagsType>;
+  currencies: Array<CurrencyType>;
+  categories: Array<CategoryType>;
+};

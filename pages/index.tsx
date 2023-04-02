@@ -1,10 +1,10 @@
 import { Layout } from '../components/Layout';
-import { Products } from '../components/Products';
+import { EstatesList } from '../components/Estates/EstatesList';
 
 const Home = () => {
   return (
     <Layout>
-      <Products />
+      <EstatesList />
     </Layout>
   );
 };

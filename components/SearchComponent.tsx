@@ -36,12 +36,12 @@ export const SearchComponent = () => {
   return (
     <>
       <input
-        className="rounded w-100"
+        className="w-100"
         type="search"
         ref={inputSearchRef}
         value={searchStringValue}
         onChange={handleSearch}
-        placeholder="Search Products... "
+        placeholder="Buscar por nombre o ubicación... "
         name="search"
         id="search"
       />

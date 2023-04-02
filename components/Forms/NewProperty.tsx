@@ -120,6 +120,9 @@ export const NewProperty = () => {
         description: values?.description ?? '',
         youtube_video: values?.youtube_video ?? '',
         profile_image: profileImage,
+        bedrooms: values?.bedrooms ?? '',
+        toilets: values?.toilets ?? '',
+        garages: values?.garages ?? '',
         estates_images,
       });
 

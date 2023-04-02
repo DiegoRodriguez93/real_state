@@ -16,10 +16,6 @@
   box-shadow: #000000;
 }
 
-.nav-link {
-  color: white!important;
-}
-
 .leaflet-control-attribution {
   display: none !important;
 }

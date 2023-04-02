@@ -1,16 +1,21 @@
 import Link from 'next/link';
 import { Navbar as BootstrapNavBar, Nav, Container, Row, Col } from 'react-bootstrap';
-import { SearchComponent } from '../SearchComponent';
+import classes from './Navbar.module.scss';
+import Image from 'next/image';
+import logoImg from './logo-dummy.png';
 
 export const Navbar = () => {
   const isActiveStyle = ({ isActive }: { isActive: boolean }) => (isActive ? 'text-primary nav-link' : 'nav-link');
 
   return (
-    <Container fluid>
-      <BootstrapNavBar bg="dark" color="white" expand="lg">
+    <Container className={classes.containerNavbar} fluid>
+      <BootstrapNavBar bg="light" color="black" expand="lg">
         <Container>
           <Row className="w-100">
-            <Col md={6} sm={12} className="d-flex justify-content-end">
+            <Col sm={1} className="d-flex">
+              <Image className={classes.logo} src={logoImg} alt="logo" />
+            </Col>
+            <Col sm={11} className="d-flex">
               <Nav>
                 <Link className="nav-link" href="/">
                   Home
@@ -22,9 +27,6 @@ export const Navbar = () => {
                   Admin
                 </Link>
               </Nav>
-            </Col>
-            <Col md={6} sm={12}>
-              <SearchComponent />
             </Col>
           </Row>
         </Container>

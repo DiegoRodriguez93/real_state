@@ -1,0 +1,43 @@
+.card {
+  cursor: pointer;
+}
+
+.cardBody {
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.cardImg {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  max-height: 250px;
+  object-fit: cover;
+}
+
+@media (min-width: 768px) {
+  .cardImg {
+    height: 151px;
+  }
+}
+
+@media (min-width: 992px) {
+  .cardImg {
+    height: 182px;
+  }
+}
+
+.estateTitle {
+  background-color: #25a5de;
+  color: white;
+  padding: 8px;
+  text-align: center;
+  font-size: 1.15rem;
+}
+
+.estateAmount {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Container, Row, Col } from 'react-bootstrap';
 import { Heart } from 'react-ionicons';
-import headerBGIMG from './header-bg.jpg';
+import headerBGIMG from './bg.jpeg';
 
 import { SearchComponent } from '../SearchComponent';
 
@@ -19,25 +19,13 @@ export const Header = () => {
           position: 'relative',
         }}
       >
+        <Col md={4} sm={12}></Col>
         <Col md={4} sm={12}>
-          <h4>UnlockCommerce</h4>
+          <div>
+            <SearchComponent />
+          </div>
         </Col>
-        <Col md={4} sm={12}>
-          <SearchComponent />
-        </Col>
-        <Col md={4} sm={12}>
-          <Heart
-            color="#a83f39"
-            onClick={() => window.location.assign('/favorites')}
-            title={`Go to favorites page`}
-            height="30px"
-            width="30px"
-            cssClasses="pointer mr-5"
-          />
-          <Link className="text-light" href="/favorites">
-            Favorites List
-          </Link>
-        </Col>
+        <Col md={4} sm={12}></Col>
       </Row>
     </Container>
   );
