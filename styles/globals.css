@@ -23,3 +23,13 @@
 .leaflet-control-container {
   display: none !important;
 }
+
+.thumb {
+  height: 80px !important;
+  padding: 0 !important;
+}
+
+.thumb img {
+  height: 80px !important;
+  width: 80px !important;
+}

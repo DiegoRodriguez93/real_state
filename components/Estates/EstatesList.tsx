@@ -1,27 +1,11 @@
 import { Col, Row } from 'react-bootstrap';
-import { useFirestore, useFirestoreConnect } from 'react-redux-firebase';
-import { useEstatesData } from '../../hooks/useEstatesData';
+
 import { EstateCard } from './EstateCard';
 
+import { useEstatesData } from '../../hooks/useEstatesData';
+
 export const EstatesList = () => {
-  useFirestoreConnect([
-    {
-      collection: 'tags',
-    },
-    {
-      collection: 'estates',
-    },
-    {
-      collection: 'categories',
-    },
-    {
-      collection: 'currencies',
-    },
-  ]);
-
-  const firestore = useFirestore();
-
-  const { categories, tags, estates, currencies } = useEstatesData();
+  const { estates } = useEstatesData();
 
   return (
     <Row>

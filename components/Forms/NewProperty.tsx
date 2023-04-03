@@ -80,7 +80,7 @@ export const NewProperty = () => {
 
     // don't migrate to Promise.All since I want them to be in the same order
     for await (const file of files) {
-      const fileName = `images/${propertyName?.replace(' ', '_')}${file?.name?.slice(-5)}`;
+      const fileName = `images/${propertyName?.replaceAll(' ', '_')}/${Date.now().toString()}_${file?.name?.slice(-5)}`;
       const reqFile = await uploadBytes(ref(storage, fileName), file);
       const url = await getDownloadURL(reqFile?.ref);
       urls.push(url);
@@ -96,7 +96,7 @@ export const NewProperty = () => {
 
       if (values?.profile_image?.[0]) {
         const file = values?.profile_image?.[0];
-        const fileName = `images/${propertyName?.replace(' ', '_')}${file?.name?.slice(-5)}`;
+        const fileName = `images/${propertyName?.replaceAll(' ', '_')}/${file?.name?.slice(-5)}`;
         const reqFile = await uploadBytes(ref(storage, fileName), file);
         const url = await getDownloadURL(reqFile?.ref);
         profileImage = url;

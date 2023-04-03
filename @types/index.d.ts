@@ -21,7 +21,7 @@ type EstateType = {
   address?: string;
   currency?: string;
   department?: string;
-  estate_images?: Array<string>;
+  estates_images?: Array<string>;
   profile_image?: string;
   bedrooms?: string;
   toilets?: string;
