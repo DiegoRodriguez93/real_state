@@ -27,7 +27,7 @@ export const useEstatesData = () => {
 
   const estatesWithPropNamesInsteadOfIds = estates?.map((estate) => ({
     ...estate,
-    currency: currencies?.[estate?.currency]?.name,
+    currency: currencies?.[estate?.currency]?.name ?? 'USD',
     tag: tags?.[estate?.tag]?.name,
     category: categories?.[estate?.category]?.name,
   }));
@@ -37,7 +37,7 @@ export const useEstatesData = () => {
   return {
     categories,
     tags,
-    estates,
+    estates: estatesWithPropNamesInsteadOfIds,
     currencies,
   };
 };

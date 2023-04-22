@@ -49,6 +49,8 @@ export const Table: FC<TableType> = ({ data, columns }) => {
       columns={columns}
       data={data}
       selectableRows
+      selectableRowsSingle
+      selectableRowsNoSelectAll
       contextActions={contextActions}
       onSelectedRowsChange={handleRowSelected}
       clearSelectedRows={toggleCleared}

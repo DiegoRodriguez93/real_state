@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useEffect, useState, useRef } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useState, useRef, FC } from 'react';
 import { Button, Col, Form, InputGroup, Row } from 'react-bootstrap';
 import { useFirestore, useFirestoreConnect } from 'react-redux-firebase';
 import { getDocs } from 'firebase/firestore';
@@ -25,7 +25,11 @@ const SearchAddress = dynamic(() => import('./SearchAddress'), {
   ssr: false,
 });
 
-export const NewProperty = () => {
+type FormPropertyProps = {
+  estateId?: string;
+};
+
+export const FormProperty: FC<FormPropertyProps> = ({ estateId }) => {
   const [productName, setProductName] = useState('');
   const [values, setValues] = useState<Record<string, any>>({});
   const [categoryId, setCategoryId] = useState('');
