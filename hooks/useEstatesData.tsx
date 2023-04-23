@@ -32,12 +32,11 @@ export const useEstatesData = () => {
     category: categories?.[estate?.category]?.name,
   }));
 
-  console.log(estatesWithPropNamesInsteadOfIds);
-
   return {
     categories,
     tags,
     estates: estatesWithPropNamesInsteadOfIds,
+    pure_estates: estates,
     currencies,
   };
 };

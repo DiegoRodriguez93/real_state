@@ -1,13 +1,31 @@
-import React from 'react';
+import React from "react";
 
-import { Layout } from '../../../components/Layout';
-import { FormProperty } from '../../../components/Forms/FormProperty';
+import { Layout } from "../../../components/Layout";
+import { FormProperty } from "../../../components/Forms/FormProperty";
+import { useGetInitialSelectorsValues } from "../../../hooks/useGetInitialSelectorsValues";
 
 const PropertyNew = () => {
+  const {
+    categories,
+    tags,
+    currencies,
+    isLoaded,
+  } = useGetInitialSelectorsValues();
+
   return (
     <Layout disableHeader>
-      <h2 className="my-5">Subir Nueva Propiedad:</h2>
-      <FormProperty />
+      {isLoaded ? (
+        <>
+          <h2 className="my-5">Subir Nueva Propiedad:</h2>
+          <FormProperty
+            categories={categories}
+            tags={tags}
+            currencies={currencies}
+          />
+        </>
+      ) : (
+        "Loading..."
+      )}
     </Layout>
   );
 };

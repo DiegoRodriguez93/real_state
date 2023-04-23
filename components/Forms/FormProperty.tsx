@@ -1,45 +1,67 @@
-import { ChangeEvent, FormEvent, useEffect, useState, useRef, FC } from 'react';
-import { Button, Col, Form, InputGroup, Row } from 'react-bootstrap';
-import { useFirestore, useFirestoreConnect } from 'react-redux-firebase';
-import { getDocs } from 'firebase/firestore';
-import { useSelector } from 'react-redux';
-import Swal from 'sweetalert2';
-import { toast } from 'react-toastify';
+import { ChangeEvent, FormEvent, useEffect, useState, useRef, FC } from "react";
+import dynamic from "next/dynamic";
+import { Button, Col, Form, InputGroup, Row } from "react-bootstrap";
+import { useFirestore } from "react-redux-firebase";
+import { toast } from "react-toastify";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
-import { RootState } from '../../redux/reducers/rootReducers';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '../../context/ReactReduxFirebaseContextProvider';
-import TextAreaWithHTML from './Inputs/TextAreaWithHTML';
-import FilesDropzone from './FilesDropzone';
-import { NewCategory } from './NewCategory';
-// import { SearchAddress } from './SearchAddress';
+import TextAreaWithHTML from "./Inputs/TextAreaWithHTML";
+import FilesDropzone from "./FilesDropzone";
+import { NewCategory } from "./NewCategory";
+import { NewGenericItem } from "./NewGenericItem";
 
-import dynamic from 'next/dynamic';
-import { NewGenericItem } from './NewGenericItem';
+import { storage } from "../../context/ReactReduxFirebaseContextProvider";
 
 const width = {
-  width: '100%',
+  width: "100%",
 };
 
-const SearchAddress = dynamic(() => import('./SearchAddress'), {
+const SearchAddress = dynamic(() => import("./SearchAddress"), {
   ssr: false,
 });
 
+type SelectorsType = Array<{ id: string; name: string }>;
+
 type FormPropertyProps = {
-  estateId?: string;
+  isEditMode?: boolean;
+  estateData?: EstateType;
+  categories: SelectorsType;
+  tags: SelectorsType;
+  currencies: SelectorsType;
 };
 
-export const FormProperty: FC<FormPropertyProps> = ({ estateId }) => {
-  const [productName, setProductName] = useState('');
+export const FormProperty: FC<FormPropertyProps> = ({
+  isEditMode,
+  estateData,
+  categories,
+  tags,
+  currencies,
+}) => {
   const [values, setValues] = useState<Record<string, any>>({});
-  const [categoryId, setCategoryId] = useState('');
-  // const [file, setFile] = useState<File | undefined>();
   const [errors, setErrors] = useState<Record<string, any>>({});
-  const [showNewCategoryFormModal, setShowNewCategoryFormModal] = useState(false);
+  const [showNewCategoryFormModal, setShowNewCategoryFormModal] = useState(
+    false
+  );
   const [showNewTagFormModal, setShowNewTagFormModal] = useState(false);
-  const [showNewCurrencyFormModal, setShowNewCurrencyFormModal] = useState(false);
+  const [showNewCurrencyFormModal, setShowNewCurrencyFormModal] = useState(
+    false
+  );
 
   const formRef: any = useRef(null);
+
+  useEffect(() => {
+    if (isEditMode && estateData) {
+      setValues(estateData);
+
+      const elements = formRef.current;
+      for (let i = 0; i < elements?.length; i++) {
+        const key: keyof EstateType = elements?.[i].id;
+        if (estateData.hasOwnProperty(key)) {
+          elements[i].value = estateData[key];
+        }
+      }
+    }
+  }, []);
 
   const handleChangeInput = (e: ChangeEvent<any>) => {
     try {
@@ -55,36 +77,23 @@ export const FormProperty: FC<FormPropertyProps> = ({ estateId }) => {
   };
 
   const firestore = useFirestore();
-  useFirestoreConnect([
-    {
-      collection: 'currencies',
-    },
-    {
-      collection: 'tags',
-    },
-    {
-      collection: 'categories',
-    },
-  ]);
-
-  const state = useSelector<RootState, Record<string, Array<{ id: string; name: string }>>>((state) => ({
-    categories: state?.firestore?.ordered?.categories,
-    tags: state?.firestore?.ordered?.tags,
-    currencies: state?.firestore?.ordered?.currencies,
-  }));
-
-  const { categories, tags, currencies } = state;
 
   useEffect(() => {
-    firestore.get('categories');
+    firestore.get("categories");
   }, [showNewCategoryFormModal, firestore]);
 
-  const uploadHouseImages = async (files: Array<File>, propertyName: string) => {
+  const uploadHouseImages = async (
+    files: Array<File>,
+    propertyName: string
+  ) => {
     const urls: Array<string> = [];
 
     // don't migrate to Promise.All since I want them to be in the same order
     for await (const file of files) {
-      const fileName = `images/${propertyName?.replaceAll(' ', '_')}/${Date.now().toString()}_${file?.name?.slice(-5)}`;
+      const fileName = `images/${propertyName?.replaceAll(
+        " ",
+        "_"
+      )}/${Date.now().toString()}_${file?.name?.slice(-5)}`;
       const reqFile = await uploadBytes(ref(storage, fileName), file);
       const url = await getDownloadURL(reqFile?.ref);
       urls.push(url);
@@ -96,79 +105,53 @@ export const FormProperty: FC<FormPropertyProps> = ({ estateId }) => {
   const handleCreateNewProduct = async (e: FormEvent<HTMLFormElement>) => {
     try {
       const propertyName = values?.estate_name;
-      let profileImage = 'https://i.imgur.com/cGoZGmO.jpg';
+      let profileImage = "https://i.imgur.com/cGoZGmO.jpg";
 
       if (values?.profile_image?.[0]) {
         const file = values?.profile_image?.[0];
-        const fileName = `images/${propertyName?.replaceAll(' ', '_')}/${file?.name?.slice(-5)}`;
+        const fileName = `images/${propertyName?.replaceAll(
+          " ",
+          "_"
+        )}/${file?.name?.slice(-5)}`;
         const reqFile = await uploadBytes(ref(storage, fileName), file);
         const url = await getDownloadURL(reqFile?.ref);
         profileImage = url;
       }
 
-      const estates_images = await uploadHouseImages(values?.estates_images, propertyName);
+      const estates_images = await uploadHouseImages(
+        values?.estates_images,
+        propertyName
+      );
 
-      const firestorePromise = firestore.add('estates', {
+      const firestorePromise = firestore.add("estates", {
         estate_name: propertyName,
-        category: values?.category ?? '',
-        currency: values?.currency ?? '',
-        tag: values?.tag ?? '',
-        price: values?.price ?? '',
-        operation_type: values?.operation_type ?? 'sale',
-        floors: values?.floors ?? '',
-        total_area: values?.total_area ?? '',
-        total_built_area: values?.total_built_area ?? '',
-        address: values?.address ?? '',
-        department: values?.department ?? '',
-        description: values?.description ?? '',
-        youtube_video: values?.youtube_video ?? '',
+        category: values?.category ?? "",
+        currency: values?.currency ?? "",
+        tag: values?.tag ?? "",
+        price: values?.price ?? "",
+        operation_type: values?.operation_type ?? "sale",
+        floors: values?.floors ?? "",
+        total_area: values?.total_area ?? "",
+        total_built_area: values?.total_built_area ?? "",
+        address: values?.address ?? "",
+        department: values?.department ?? "",
+        description: values?.description ?? "",
+        youtube_video: values?.youtube_video ?? "",
         profile_image: profileImage,
-        bedrooms: values?.bedrooms ?? '',
-        toilets: values?.toilets ?? '',
-        garages: values?.garages ?? '',
+        bedrooms: values?.bedrooms ?? "",
+        toilets: values?.toilets ?? "",
+        garages: values?.garages ?? "",
         estates_images,
       });
 
       toast.promise(firestorePromise, {
-        pending: 'Creando nueva propiedad...',
-        success: 'La propiedad ha sido creado exitosamente 👌',
-        error: 'Ocurrió un error al crear la propiedad, por favor inténtalo de nuevo más tarde 🤯',
+        pending: "Creando nueva propiedad...",
+        success: "La propiedad ha sido creado exitosamente 👌",
+        error:
+          "Ocurrió un error al crear la propiedad, por favor inténtalo de nuevo más tarde 🤯",
       });
 
       return;
-
-      /*       const productsReq = await getDocs(firestore.collection('products'));
-      const products = productsReq?.docs.map((doc) => doc.data());
-      const hasThisCategory = products?.find((product) => productName.toLowerCase() === product?.name.toLowerCase());
-
-      if (hasThisCategory) {
-        Swal.fire('Error!', 'Product already exists', 'error');
-        return;
-      } */
-
-      /*       const fileName = `images/${productName?.replace(' ', '_')}${file?.name?.slice(-5)}`;
-
-      const reqFile = await uploadBytes(ref(storage, fileName), file as Blob);
-
-      const url = await getDownloadURL(reqFile?.ref);
- */
-      /*       const firestorePromise = firestore.add('products', {
-        name: productName,
-        categoryId,
-        file: url,
-      }); 
-
-      toast.promise(firestorePromise, {
-        pending: 'Creando nueva propiedad...',
-        success: 'La propiedad ha sido creado exitosamente 👌',
-        error: 'Ocurrió un error al crear la propiedad, por favor inténtalo de nuevo más tarde 🤯',
-      });
-
-      const target = e?.target as HTMLFormElement;
-      target.reset();
-      setProductName('');
-      setCategoryId('');*/
-      // setFile(undefined);
     } catch (error) {
       console.log(error);
     }
@@ -176,7 +159,7 @@ export const FormProperty: FC<FormPropertyProps> = ({ estateId }) => {
 
   const focusFirstInvalidField = () => {
     if (formRef.current) {
-      const firstInvalidField = formRef.current?.querySelector('.is-invalid');
+      const firstInvalidField = formRef.current?.querySelector(".is-invalid");
       if (firstInvalidField) {
         firstInvalidField.focus();
       }
@@ -187,7 +170,7 @@ export const FormProperty: FC<FormPropertyProps> = ({ estateId }) => {
     const newErrors: Record<string, any> = {};
 
     if (!values.estate_name) {
-      newErrors.estate_name = 'El título de la propiedad es obligatorio.';
+      newErrors.estate_name = "El título de la propiedad es obligatorio.";
     }
 
     setErrors(newErrors);
@@ -211,7 +194,11 @@ export const FormProperty: FC<FormPropertyProps> = ({ estateId }) => {
         />
       )}
       {showNewTagFormModal && (
-        <NewGenericItem itemCollectionName="tags" itemNameLabel="Etiqueta" onHide={() => setShowNewTagFormModal(false)} />
+        <NewGenericItem
+          itemCollectionName="tags"
+          itemNameLabel="Etiqueta"
+          onHide={() => setShowNewTagFormModal(false)}
+        />
       )}
       {showNewCurrencyFormModal && (
         <NewGenericItem
@@ -239,16 +226,22 @@ export const FormProperty: FC<FormPropertyProps> = ({ estateId }) => {
             name="estate_name"
             placeholder="Ej: Casa moderna y luminosa en zona de Palermo..."
             onChange={handleChangeInput}
-            className={errors.estate_name ? 'is-invalid' : ''}
+            className={errors.estate_name ? "is-invalid" : ""}
           />
-          {errors.estate_name && <Form.Text className="text-danger">{errors.estate_name}</Form.Text>}
+          {errors.estate_name && (
+            <Form.Text className="text-danger">{errors.estate_name}</Form.Text>
+          )}
         </Form.Group>
 
         <Form.Group className="mb-3">
           <Form.Label>Seleccione una categoría:</Form.Label>
           <Row>
             <Col sm={9}>
-              <Form.Select onChange={handleChangeInput} name="category" id="category">
+              <Form.Select
+                onChange={handleChangeInput}
+                name="category"
+                id="category"
+              >
                 <option>- Select -</option>
                 {categories?.map((category) => (
                   <option key={category?.id} value={category?.id}>
@@ -258,7 +251,11 @@ export const FormProperty: FC<FormPropertyProps> = ({ estateId }) => {
               </Form.Select>
             </Col>
             <Col sm={3}>
-              <Button style={width} type="button" onClick={() => setShowNewCategoryFormModal(true)}>
+              <Button
+                style={width}
+                type="button"
+                onClick={() => setShowNewCategoryFormModal(true)}
+              >
                 Nueva Categoría
               </Button>
             </Col>
@@ -279,7 +276,11 @@ export const FormProperty: FC<FormPropertyProps> = ({ estateId }) => {
               </Form.Select>
             </Col>
             <Col sm={3}>
-              <Button style={width} type="button" onClick={() => setShowNewTagFormModal(true)}>
+              <Button
+                style={width}
+                type="button"
+                onClick={() => setShowNewTagFormModal(true)}
+              >
                 Nueva Etiqueta
               </Button>
             </Col>
@@ -293,13 +294,22 @@ export const FormProperty: FC<FormPropertyProps> = ({ estateId }) => {
                 Precio <span>*</span>
               </Form.Label>
               <InputGroup className="mb-3">
-                <Form.Control type="number" name="price" id="price" onChange={handleChangeInput} />
+                <Form.Control
+                  type="number"
+                  name="price"
+                  id="price"
+                  onChange={handleChangeInput}
+                />
                 <InputGroup.Text>USD</InputGroup.Text>
               </InputGroup>
             </Col>
             <Col sm={3}>
               <Form.Label>Seleccione una moneda:</Form.Label>
-              <Form.Select onChange={handleChangeInput} name="currency" id="currency">
+              <Form.Select
+                onChange={handleChangeInput}
+                name="currency"
+                id="currency"
+              >
                 <option>- Select -</option>
                 {currencies?.map((currency) => (
                   <option key={currency?.id} value={currency?.id}>
@@ -308,8 +318,19 @@ export const FormProperty: FC<FormPropertyProps> = ({ estateId }) => {
                 ))}
               </Form.Select>
             </Col>
-            <Col style={{ display: 'flex!important', alignItems: 'center!important', paddingTop: '15px!important' }} sm={3}>
-              <Button style={width} type="button" onClick={() => setShowNewCurrencyFormModal(true)}>
+            <Col
+              style={{
+                display: "flex!important",
+                alignItems: "center!important",
+                paddingTop: "15px!important",
+              }}
+              sm={3}
+            >
+              <Button
+                style={width}
+                type="button"
+                onClick={() => setShowNewCurrencyFormModal(true)}
+              >
                 Nueva Moneda
               </Button>
             </Col>
@@ -320,7 +341,11 @@ export const FormProperty: FC<FormPropertyProps> = ({ estateId }) => {
           <Row>
             <Col sm={9}>
               <Form.Label>Tipo de operación:</Form.Label>
-              <Form.Select onChange={handleChangeInput} name="operation_type" id="operation_type">
+              <Form.Select
+                onChange={handleChangeInput}
+                name="operation_type"
+                id="operation_type"
+              >
                 <option value="sale"> Venta</option>
                 <option value="rent">Alquiler</option>
               </Form.Select>
@@ -328,7 +353,12 @@ export const FormProperty: FC<FormPropertyProps> = ({ estateId }) => {
             <Col sm={3}>
               <Form.Label>Pisos:</Form.Label>
               <InputGroup className="mb-3">
-                <Form.Control type="number" name="floors" id="floors" onChange={handleChangeInput} />
+                <Form.Control
+                  type="number"
+                  name="floors"
+                  id="floors"
+                  onChange={handleChangeInput}
+                />
               </InputGroup>
             </Col>
           </Row>
@@ -338,14 +368,24 @@ export const FormProperty: FC<FormPropertyProps> = ({ estateId }) => {
           <Col sm={6}>
             <Form.Label>Superficie Total:</Form.Label>
             <InputGroup className="mb-3">
-              <Form.Control type="number" name="total_area" id="total_area" onChange={handleChangeInput} />
+              <Form.Control
+                type="number"
+                name="total_area"
+                id="total_area"
+                onChange={handleChangeInput}
+              />
               <InputGroup.Text>m2</InputGroup.Text>
             </InputGroup>
           </Col>
           <Col sm={6}>
             <Form.Label>Área edificada:</Form.Label>
             <InputGroup className="mb-3">
-              <Form.Control type="number" name="total_built_area" id="total_built_area" onChange={handleChangeInput} />
+              <Form.Control
+                type="number"
+                name="total_built_area"
+                id="total_built_area"
+                onChange={handleChangeInput}
+              />
               <InputGroup.Text>m2</InputGroup.Text>
             </InputGroup>
           </Col>
@@ -355,26 +395,46 @@ export const FormProperty: FC<FormPropertyProps> = ({ estateId }) => {
           <Col sm={4}>
             <Form.Label>Dormitorios:</Form.Label>
             <InputGroup className="mb-3">
-              <Form.Control type="number" name="bedrooms" id="bedrooms" onChange={handleChangeInput} />
+              <Form.Control
+                type="number"
+                name="bedrooms"
+                id="bedrooms"
+                onChange={handleChangeInput}
+              />
             </InputGroup>
           </Col>
           <Col sm={4}>
             <Form.Label>Baños:</Form.Label>
             <InputGroup className="mb-3">
-              <Form.Control type="number" name="toilets" id="toilets" onChange={handleChangeInput} />
+              <Form.Control
+                type="number"
+                name="toilets"
+                id="toilets"
+                onChange={handleChangeInput}
+              />
             </InputGroup>
           </Col>
           <Col sm={4}>
             <Form.Label>Cocheras:</Form.Label>
             <InputGroup className="mb-3">
-              <Form.Control type="number" name="garages" id="garages" onChange={handleChangeInput} />
+              <Form.Control
+                type="number"
+                name="garages"
+                id="garages"
+                onChange={handleChangeInput}
+              />
             </InputGroup>
           </Col>
         </Row>
 
         <Form.Group className="mb-3">
           <Form.Label>Subir imagenes del producto:</Form.Label>
-          <FilesDropzone multiple values={values} setValues={setValues} key_file_array="estates_images" />
+          <FilesDropzone
+            multiple
+            values={values}
+            setValues={setValues}
+            key_file_array="estates_images"
+          />
         </Form.Group>
 
         <Form.Group className="mb-3">
@@ -384,7 +444,11 @@ export const FormProperty: FC<FormPropertyProps> = ({ estateId }) => {
 
         <Form.Group className="mb-3">
           <Form.Label>Descripción:</Form.Label>
-          <TextAreaWithHTML name="description" values={values} setValues={setValues} />
+          <TextAreaWithHTML
+            name="description"
+            values={values}
+            setValues={setValues}
+          />
         </Form.Group>
 
         {/*         <Form.Group className="mb-3">
@@ -405,7 +469,11 @@ export const FormProperty: FC<FormPropertyProps> = ({ estateId }) => {
 
         <Form.Group className="mb-3">
           <Form.Label>Subir imagen principal del producto:</Form.Label>
-          <FilesDropzone values={values} setValues={setValues} key_file_array="profile_image" />
+          <FilesDropzone
+            values={values}
+            setValues={setValues}
+            key_file_array="profile_image"
+          />
         </Form.Group>
 
         <Form.Group className="mb-3">
@@ -416,10 +484,14 @@ export const FormProperty: FC<FormPropertyProps> = ({ estateId }) => {
             name="youtube_video"
             placeholder="Ej: https://youtu.be/RVF-L3zqhpE"
             onChange={handleChangeInput}
-            className={errors.youtube_video ? 'is-invalid' : ''}
+            className={errors.youtube_video ? "is-invalid" : ""}
           />
           <small>Solo soporta enlaces de YouTube</small>
-          {errors.youtube_video && <Form.Text className="text-danger">{errors.youtube_video}</Form.Text>}
+          {errors.youtube_video && (
+            <Form.Text className="text-danger">
+              {errors.youtube_video}
+            </Form.Text>
+          )}
         </Form.Group>
 
         <Button className="w-100 mt-4 mb-5" type="submit">
